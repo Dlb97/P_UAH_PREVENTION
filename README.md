@@ -15,4 +15,8 @@ Preprocessing for the UAH Prevention Dataset (https://prevention-dataset.uah.es)
   
 * download_files: Creates a directory and download the files (txt data about detections and lane changes + video). Example to use it :
 
+     sh download_files.sh <folder_to_be_created> <driveset> <record_number>
+     sh download_files.sh v1 1 1    --> Will download the data for driveset 1 record 1
+    
+
      

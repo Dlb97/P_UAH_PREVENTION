@@ -20,3 +20,4 @@ Preprocessing for the UAH Prevention Dataset (https://prevention-dataset.uah.es)
     
 
      
+* preprocess.sh: After the data to be processed has been downloaded this script automates calling the data_join.py. Include the folders you want to process in the initial for loop and define the paths an variables to use. 

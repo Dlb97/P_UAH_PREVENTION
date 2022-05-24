@@ -2,6 +2,10 @@
 import cv2
 import numpy as np
 from tensorflow import keras
+import pandas as pd
+import random
+from sklearn.model_selection import train_test_split
+
 
 
 def get_csv(file):
@@ -11,7 +15,7 @@ def get_csv(file):
     s3 = boto3.client('s3')
     obj = s3.get_object(Bucket='thesis-videos-dlb',Key='csv/' + file)
     df = pd.read_csv(io.BytesIO(obj['Body'].read()))
-    return df
+    return df[["path","label"]]
 
 
 
@@ -84,7 +88,7 @@ def build_feature_extractor():
     return keras.Model(inputs, outputs, name="feature_extractor")
 
 
-def prepare_single_video(frames,num_features=2048):
+def prepare_single_video(frames,feature_extractor,num_features=2048):
     frames = frames[None, ...]
     frame_mask = np.zeros(shape=(1, 20,), dtype="bool")
     frame_features = np.zeros(shape=(1, 20, num_features), dtype="float32")
@@ -99,7 +103,7 @@ def prepare_single_video(frames,num_features=2048):
     return frame_features, frame_mask
 
 
-def prepare_all_videos(df,num_features=2048):
+def prepare_all_videos(df,feature_extractor,num_features=2048):
     num_samples = len(df)
     video_paths = df["path"].values.tolist()
 
@@ -161,19 +165,49 @@ def get_sequence_model(df,num_features=2048):
     return rnn_model
 
 
+
+def get_balanced_dataset():
+    csv_files = ['v' + str(i) for i in range(3,12) if i != 6 ]
+    dfs = []
+    for i in csv_files:
+        dfs.append(get_csv(i))
+
+    df = pd.concat(dfs)
+    df = df.reset_index()
+    lane_changes = df[df["label"] != '[1 0 0]']
+    lane_changes = lane_changes[["path","label"]]
+    no_lane_changes = df[df["label"] == '[1 0 0]']
+    negative_subset = get_negative_subset(len(lane_changes),no_lane_changes)
+    return lane_changes, negative_subset
+
+
+
+def get_negative_subset(n,df):
+    """Returns a subset of size n of the observations that are not a lane change"""
+    indices = []
+    for i in range(n):
+        indices.append(random.randint(0,len(df)))
+    subset = df.iloc[indices]
+    return subset[["path","label"]]
+
+
+
+
+
+##
+lc, no_lc = get_balanced_dataset()
+df = pd.concat([lc,no_lc])
+df = df.reset_index()
+X_train, X_test, y_train, y_test = train_test_split(df["path"],df["label"],test_size=0.2,random_state=19)
+train = pd.concat([X_train,y_train],axis=1)
+test = pd.concat([X_test,y_test],axis=1)
+
 ##
 
-df = get_csv('v10')
-##
-
-video_name = 'v1/2_0.mp4'
-video = load_video(video_name)
 feature_extractor = build_feature_extractor()
-features,mask = prepare_single_video(video)
-subset = df[0:300]
-X_train, y_train = prepare_all_videos(subset)
-model = get_sequence_model(subset)
+X_train, y_train = prepare_all_videos(train)
+model = get_sequence_model(train)
 
 ##
 
-model.fit([X_train[0],X_train[1]],y_train,epochs=4)
+"""Filter missing values here of train. SO CHECK THAT THE PATH IS IN THE S3 BUCKET OTHERWISE PRUNE IR"""

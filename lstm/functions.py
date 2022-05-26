@@ -35,7 +35,7 @@ def get_video(o):
         cap = cv2.VideoCapture(filename)
         return cap
     except Exception:
-        return
+        return None
 
 
 
@@ -52,6 +52,8 @@ def crop_center_square(frame):
 
 def load_video(path, max_frames=0, resize=(224, 224)):
     cap = get_video(path) #EDITED HERE TO GRAB MY VIDEO FROM S3
+    if cap == None:
+        return None
     frames = []
     try:
         while True:
@@ -66,8 +68,7 @@ def load_video(path, max_frames=0, resize=(224, 224)):
             if len(frames) == max_frames:
                 break
     finally:
-        if cap:
-            cap.release()
+        cap.release()
     return np.array(frames)
 
 
@@ -121,22 +122,23 @@ def prepare_all_videos(df,feature_extractor,num_features=2048):
     for idx, path in enumerate(video_paths):
         # Gather all its frames and add a batch dimension.
         frames = load_video(path)
-        frames = frames[None, ...]
+        if type(frames) != type(None):
+            frames = frames[None, ...]
 
-        # Initialize placeholders to store the masks and features of the current video.
-        temp_frame_mask = np.zeros(shape=(1, 20,), dtype="bool")
-        temp_frame_features = np.zeros(shape=(1, 20, num_features), dtype="float32")
+            # Initialize placeholders to store the masks and features of the current video.
+            temp_frame_mask = np.zeros(shape=(1, 20,), dtype="bool")
+            temp_frame_features = np.zeros(shape=(1, 20, num_features), dtype="float32")
 
-        # Extract features from the frames of the current video.
-        for i, batch in enumerate(frames):
-            video_length = batch.shape[0]
-            length = min(20, video_length)
-            for j in range(length):
-                temp_frame_features[i, j, :] = feature_extractor.predict(batch[None, j, :])
-            temp_frame_mask[i, :length] = 1  # 1 = not masked, 0 = masked
+            # Extract features from the frames of the current video.
+            for i, batch in enumerate(frames):
+                video_length = batch.shape[0]
+                length = min(20, video_length)
+                for j in range(length):
+                    temp_frame_features[i, j, :] = feature_extractor.predict(batch[None, j, :])
+                temp_frame_mask[i, :length] = 1  # 1 = not masked, 0 = masked
 
-        frame_features[idx,] = temp_frame_features.squeeze()
-        frame_masks[idx,] = temp_frame_mask.squeeze()
+            frame_features[idx,] = temp_frame_features.squeeze()
+            frame_masks[idx,] = temp_frame_mask.squeeze()
 
     return (frame_features, frame_masks), labels
 
@@ -177,7 +179,7 @@ def get_balanced_dataset():
     lane_changes = df[df["label"] != '[1 0 0]']
     lane_changes = lane_changes[["path","label"]]
     no_lane_changes = df[df["label"] == '[1 0 0]']
-    negative_subset = get_negative_subset(len(lane_changes),no_lane_changes)
+    negative_subset = get_negative_subset(len(lane_changes)*2,no_lane_changes)
     return lane_changes, negative_subset
 
 
@@ -191,23 +193,20 @@ def get_negative_subset(n,df):
     return subset[["path","label"]]
 
 
+def filter_videos(df):
+    import boto3
+    s3 = boto3.client('s3')
+    found = []
+    for idx,i in enumerate(df['path'].tolist()):
+        response = s3.list_objects(Bucket='thesis-videos-dlb',Prefix=i)
+        try:
+            content = response['Contents']
+            found.append(idx)
+        except KeyError:
+            print('Video not found',i)
+            pass
+
+    return df.iloc[found]
 
 
 
-##
-lc, no_lc = get_balanced_dataset()
-df = pd.concat([lc,no_lc])
-df = df.reset_index()
-X_train, X_test, y_train, y_test = train_test_split(df["path"],df["label"],test_size=0.2,random_state=19)
-train = pd.concat([X_train,y_train],axis=1)
-test = pd.concat([X_test,y_test],axis=1)
-
-##
-
-feature_extractor = build_feature_extractor()
-X_train, y_train = prepare_all_videos(train)
-model = get_sequence_model(train)
-
-##
-
-"""Filter missing values here of train. SO CHECK THAT THE PATH IS IN THE S3 BUCKET OTHERWISE PRUNE IR"""

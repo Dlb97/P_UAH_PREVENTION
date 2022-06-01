@@ -37,6 +37,10 @@ X_test,y_test = prepare_input_without_feature_extractor(test)
 model = action_model_LSTM()
 optimizer = keras.optimizers.Adam(0.001)
 model.compile(optimizer,'categorical_crossentropy',metrics=['acc'])
+##
+X_train,y_train = augment_dataset(X_train,y_train)
+
+##
 model.fit(X_train,y_train,epochs=10)
 ##
 

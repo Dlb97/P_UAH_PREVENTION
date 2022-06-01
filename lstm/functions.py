@@ -227,6 +227,28 @@ def filter_videos(df):
     return df.iloc[found]
 
 
+def augment_dataset(video, labels):
+    """Augments the dataset only for lane changes.
 
+    Inputs:
+    - video: Array of shape [N,20,224,224,3] that consist of the videos stacked together.
+    - labels: Classification of each of the videos. Array of shape [N,3] """
+    flipped_videos = []
+    flipped_labels = []
+    for i in range(len(labels)):
+        lc = labels[i] != np.array([1, 0, 0])
+        if lc.any():
+            left = labels[i] == np.array([0, 1, 0])
+            right = labels[i] == np.array([0, 0, 1])
+            if left.all():
+                flipped_video = np.array([tf.image.flip_left_right(j) for j in video[i]])
+                flipped_videos.append(flipped_video)
+                flipped_labels.append(np.array([0, 0, 1]))
+            elif right.all():
+                flipped_video = np.array([tf.image.flip_left_right(j) for j in video[i]])
+                flipped_videos.append(flipped_video)
+                flipped_labels.append(np.array([0, 1, 0]))
 
-
+    flipped_videos = np.array(flipped_videos)
+    flipped_labels = np.array(flipped_labels)
+    return np.concatenate((video, flipped_videos)), np.concatenate((labels, flipped_labels))

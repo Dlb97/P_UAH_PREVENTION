@@ -15,9 +15,27 @@ def get_csv(file):
     s3 = boto3.client('s3')
     obj = s3.get_object(Bucket='thesis-videos-dlb',Key='csv/' + file)
     df = pd.read_csv(io.BytesIO(obj['Body'].read()))
+    #df = create_categorical_label(df)
     return df[["path","label"]]
 
 
+def create_categorical_label(item):
+
+        if item == '[1 0 0]':
+            return np.array([1,0,0])
+        elif item == '[0 1 0]':
+            return np.array([0,1,0])
+        else:
+            return np.array([0,0,1])
+
+def prepare_input_without_feature_extractor(df):
+    """Creates the arrays that are fed into any NN as they are. So no feature extraction perfromed """
+    all_videos = []
+    all_labels = []
+    for i in range(len(df)):
+        all_videos.append(load_video(df['path'].iloc[i]))
+        all_labels.append(create_categorical_label(df['label'].iloc[i]))
+    return np.array(all_videos), np.array(all_labels)
 
 
 def get_video(o):
@@ -179,7 +197,7 @@ def get_balanced_dataset():
     lane_changes = df[df["label"] != '[1 0 0]']
     lane_changes = lane_changes[["path","label"]]
     no_lane_changes = df[df["label"] == '[1 0 0]']
-    negative_subset = get_negative_subset(len(lane_changes)*2,no_lane_changes)
+    negative_subset = get_negative_subset(len(lane_changes),no_lane_changes)
     return lane_changes, negative_subset
 
 
@@ -207,6 +225,8 @@ def filter_videos(df):
             pass
 
     return df.iloc[found]
+
+
 
 
 

@@ -29,6 +29,7 @@ parser.add_argument('-aug',type=bool,help='Perform data augmentation',required=T
 parser.add_argument('-f',type=bool,help='Use feature extractor',required=True)
 parser.add_argument('-e',type=int,help='Number of epochs',required=True)
 parser.add_argument('-b',type=int,help='Batch size',required=True)
+parser.add_argument('-c',type=bool,help='Confussion matrix',required=True)
 args = parser.parse_args()
 
 
@@ -98,6 +99,17 @@ if __name__ == '__main__':
 
     with open('checkpoints/' + results_filename, 'w') as file:
         json.dump(history.history, file)
+        if args.c:
+            prediction = model.predict(X_test)
+            predicted_classes = [np.argmax(i) for i in prediction]
+            real_classes = [np.argmax(i) for i in y_test]
+            score = accuracy_score(real_classes, predicted_classes)
+            file.write(score)
+            confusion = confusion_matrix(real_classes, predicted_classes)
+            file.write(str(confusion))
+
+
+
 
     s3 = boto3.client('s3')
     s3.upload_file(checkpoint_filepath + '.data-00000-of-00001' , 'thesis-videos-dlb', 'weights/' + '_weights_' + args.m)

@@ -161,30 +161,6 @@ def prepare_all_videos(df,feature_extractor,num_features=2048):
     return (frame_features, frame_masks), labels
 
 
-def get_sequence_model(df,num_features=2048):
-
-    #Added here
-    label_processor = keras.layers.StringLookup(num_oov_indices=0, vocabulary=np.unique(df["label"]))
-    class_vocab = label_processor.get_vocabulary()
-
-    frame_features_input = keras.Input((20, num_features))
-    mask_input = keras.Input((20,), dtype="bool")
-
-    # Refer to the following tutorial to understand the significance of using `mask`:
-    # https://keras.io/api/layers/recurrent_layers/gru/
-
-    x = keras.layers.GRU(16, return_sequences=True)(frame_features_input, mask=mask_input)
-    x = keras.layers.GRU(8)(x)
-    x = keras.layers.Dropout(0.4)(x)
-    x = keras.layers.Dense(8, activation="relu")(x)
-    output = keras.layers.Dense(len(class_vocab), activation="softmax")(x)
-
-    rnn_model = keras.Model([frame_features_input, mask_input], output)
-
-    rnn_model.compile(loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    return rnn_model
-
-
 
 def get_balanced_dataset():
     csv_files = ['v' + str(i) for i in range(3,12) if i != 6 ]
@@ -233,6 +209,7 @@ def augment_dataset(video, labels):
     Inputs:
     - video: Array of shape [N,20,224,224,3] that consist of the videos stacked together.
     - labels: Classification of each of the videos. Array of shape [N,3] """
+    import tensorflow as tf
     flipped_videos = []
     flipped_labels = []
     for i in range(len(labels)):

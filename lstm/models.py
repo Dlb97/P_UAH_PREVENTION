@@ -117,6 +117,6 @@ def GRU_extractor(num_features=2048):
 
 
 def get_model(model_name):
-    models = {'lstm': action_model_LSTM() , 'gru': action_model_GRU(), 'gru_extractor': GRU_extractor(),
-              'test': testing_model() }
-    return models[model_name]
+    models = {'lstm': action_model_LSTM , 'gru': action_model_GRU, 'gru_extractor': GRU_extractor,
+              'test': testing_model }
+    return models[model_name]()

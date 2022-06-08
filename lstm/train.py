@@ -104,7 +104,7 @@ if __name__ == '__main__':
             predicted_classes = [np.argmax(i) for i in prediction]
             real_classes = [np.argmax(i) for i in y_test]
             score = accuracy_score(real_classes, predicted_classes)
-            file.write(score)
+            file.write(str(score))
             confusion = confusion_matrix(real_classes, predicted_classes)
             file.write(str(confusion))
 

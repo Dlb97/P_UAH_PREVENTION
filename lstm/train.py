@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     """Train model and save results to S3"""
 
-    model = get_model(args.m)
+    model = get_model(args.m,train)
     model.compile('adam', 'categorical_crossentropy', metrics=['accuracy'])
     checkpoint_filepath = 'checkpoints/checkpoint_' + args.m
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, save_weights_only=True,

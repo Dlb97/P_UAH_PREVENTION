@@ -6,7 +6,7 @@
 
 
 TO DO LIST:
-    - INCLUDE CONFUSSION MATRIX IN THE RESULTS
+
     - Modify prepare_one_video so that it is also possible to perform data augmentation when using the feature
       extractor ---- > Use the prepare one video with for loop that iterates through the array after the augmentation
 
@@ -20,7 +20,7 @@ Parser:
 
 """
 
-
+#python3 train.py -m lstm -aug True -f False -e 6 -b 24 -c True
 
 import argparse
 parser = argparse.ArgumentParser(description="Train a specific ML model on the UAH PREVENTION DATASET and store its results")
@@ -62,25 +62,30 @@ if __name__ == '__main__':
     train = filter_videos(train)
     test = filter_videos(test)
 
-    """Perform data augmentation"""
+
+
+    X_train, y_train = prepare_input_without_feature_extractor(train)
+    X_test, y_test = prepare_input_without_feature_extractor(test)
+
+
     if args.aug:
 
-        X_train, y_train = prepare_input_without_feature_extractor(train)
-        X_test, y_test = prepare_input_without_feature_extractor(test)
+        X_train, y_train = augment_dataset(X_train,y_train)
 
-    else:
 
-        feature_extractor = build_feature_extractor()
-        X_train, y_train = prepare_all_videos(train, feature_extractor)
 
 
     """Perform feature extraction"""
 
     if args.f:
 
-        feature_extractor = build_feature_extractor()
-        """TO DO: Process data here for feature extraction so that it has the appropriate shape for
-        a feature extracted model"""
+        X_train = extract_features(X_train)
+        X_test = extract_features(X_test)
+        y_train = prepare_labels(y_train)
+        y_test = prepare_labels(y_test)
+
+
+
 
 
     """Train model and save results to S3"""
@@ -92,8 +97,13 @@ if __name__ == '__main__':
                                                                    monitor='val_accuracy', mode='max',
                                                                    save_best_only=True)
 
-    history = model.fit(X_train, y_train, callbacks=[model_checkpoint_callback], validation_data=[X_test, y_test],epochs=args.e, batch_size=args.b)
-    """TO DO: WRITE CONFUSION MATRIX"""
+    """Need to pass both features and mask in the case we extracted them"""
+    if args.f :
+        history = model.fit([X_train[0],X_train[1]],y_train, callbacks=[model_checkpoint_callback], validation_data=[X_test, y_test],
+                        epochs=args.e, batch_size=args.b)
+    else:
+        history = model.fit(X_train, y_train, callbacks=[model_checkpoint_callback], validation_data=[X_test, y_test],epochs=args.e, batch_size=args.b)
+
 
     results_filename = 'results_' + args.m + '.txt'
 

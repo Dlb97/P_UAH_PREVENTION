@@ -119,7 +119,7 @@ def prepare_single_video(frames,feature_extractor,num_features=2048):
             frame_features[i, j, :] = feature_extractor.predict(batch[None, j, :])
         frame_mask[i, :length] = 1  # 1 = not masked, 0 = masked
 
-    return frame_features, frame_mask
+    return frame_features.squeeze(), frame_mask.squeeze()
 
 
 def prepare_all_videos(df,feature_extractor,num_features=2048):
@@ -229,3 +229,34 @@ def augment_dataset(video, labels):
     flipped_videos = np.array(flipped_videos)
     flipped_labels = np.array(flipped_labels)
     return np.concatenate((video, flipped_videos)), np.concatenate((labels, flipped_labels))
+
+
+
+def extract_features(X_train,features=2048):
+    """Extracts the features from all videos
+    :args
+    - X_train: 5d array [N 20 224 224 3]
+    - features: nº of fratures to be stracted
+    :returns
+    - tuple of 2 arrays the features and the mask . ([N,20,2048],[])
+
+    """
+    feature_extractor = build_feature_extractor()
+    frame_features = []
+    frame_mask = []
+    for i in range(len(X_train)):
+        features, mask = prepare_single_video(X_train[i], feature_extractor, 2048)
+        frame_features.append(features)
+        frame_mask.append(mask)
+
+    return (np.array(frame_features).squeeze(), np.array(frame_mask).squeeze())
+
+
+def prepare_labels(labels):
+    """Prepares the labels in the correct format in the case we use the feature extractor.
+    We pass from [0 1 0] array to [1]"""
+    ls = []
+    for i in range(len(labels)):
+        l = np.argmax(labels[i])
+        ls.append([l])
+    return np.array(ls)

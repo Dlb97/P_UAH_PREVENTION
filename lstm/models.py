@@ -90,11 +90,11 @@ def testing_model():
 
 
 
-def GRU_extractor(num_features=2048):
+def GRU_extractor(df,num_features=2048):
 
     import numpy as np
-    #label_processor = keras.layers.StringLookup(num_oov_indices=0, vocabulary=np.unique(df["label"]))
-    label_processor = keras.layers.StringLookup(num_oov_indices=0, vocabulary=np.array([[1,0,0],[0,1,0],[0,0,1]]))
+    label_processor = keras.layers.StringLookup(num_oov_indices=0, vocabulary=np.unique(df["label"]))
+    #label_processor = keras.layers.StringLookup(num_oov_indices=0, vocabulary=np.array([[1,0,0],[0,1,0],[0,0,1]]))
     class_vocab = label_processor.get_vocabulary()
 
     frame_features_input = keras.Input((20, num_features))
@@ -116,7 +116,7 @@ def GRU_extractor(num_features=2048):
 
 
 
-def get_model(model_name):
+def get_model(model_name,*args):
     models = {'lstm': action_model_LSTM , 'gru': action_model_GRU, 'gru_extractor': GRU_extractor,
               'test': testing_model }
-    return models[model_name]()
+    return models[model_name](*args)

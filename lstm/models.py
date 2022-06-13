@@ -70,9 +70,7 @@ def action_model_LSTM(shape=(20,224, 224, 3), nbout=3):
     model.add(LSTM(24, return_sequences=True,dropout=0.2))
     model.add(LSTM(20, return_sequences=False))
     model.add(Dropout(.5))
-    model.add(Dense(512, activation='relu'))
-    model.add(Dropout(.5))
-    model.add(Dense(128, activation='relu'))
+    model.add(Dense(22, activation='relu'))
     model.add(Dropout(.5))
     model.add(Dense(64, activation='relu'))
     model.add(Dense(nbout, activation='softmax'))
@@ -116,7 +114,33 @@ def GRU_extractor(df,num_features=2048):
 
 
 
+def LSTM_extractor(df,num_features=2048):
+
+    import numpy as np
+    label_processor = keras.layers.StringLookup(num_oov_indices=0, vocabulary=np.unique(df["label"]))
+    #label_processor = keras.layers.StringLookup(num_oov_indices=0, vocabulary=np.array([[1,0,0],[0,1,0],[0,0,1]]))
+    class_vocab = label_processor.get_vocabulary()
+
+    frame_features_input = keras.Input((20, num_features))
+    mask_input = keras.Input((20,), dtype="bool")
+
+    # Refer to the following tutorial to understand the significance of using `mask`:
+    # https://keras.io/api/layers/recurrent_layers/gru/
+
+    x = keras.layers.LSTM(16, return_sequences=True)(frame_features_input, mask=mask_input)
+    x = keras.layers.LSTM(8)(x)
+    x = keras.layers.Dropout(0.3)(x)
+    x = keras.layers.Dense(8, activation="relu")(x)
+    output = keras.layers.Dense(len(class_vocab), activation="softmax")(x)
+
+    rnn_model = keras.Model([frame_features_input, mask_input], output)
+
+    #rnn_model.compile(loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    return rnn_model
+
+
+
 def get_model(model_name,*args):
     models = {'lstm': action_model_LSTM , 'gru': action_model_GRU, 'gru_extractor': GRU_extractor,
-              'test': testing_model }
+              'test': testing_model , 'lstm_extractor' : LSTM_extractor }
     return models[model_name](*args)

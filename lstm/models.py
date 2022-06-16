@@ -102,9 +102,10 @@ def GRU_extractor(df,num_features=2048):
     # https://keras.io/api/layers/recurrent_layers/gru/
 
     x = keras.layers.GRU(16, return_sequences=True)(frame_features_input, mask=mask_input)
-    x = keras.layers.GRU(8)(x)
-    x = keras.layers.Dropout(0.4)(x)
-    x = keras.layers.Dense(8, activation="relu")(x)
+    x = keras.layers.GRU(80,return_sequences=True)(x)
+    x = keras.layers.GRU(10)(x)
+    x = keras.layers.Dropout(0.2)(x)
+    x = keras.layers.Dense(18, activation="relu")(x)
     output = keras.layers.Dense(len(class_vocab), activation="softmax")(x)
 
     rnn_model = keras.Model([frame_features_input, mask_input], output)
@@ -127,11 +128,14 @@ def LSTM_extractor(df,num_features=2048):
     # Refer to the following tutorial to understand the significance of using `mask`:
     # https://keras.io/api/layers/recurrent_layers/gru/
 
-    x = keras.layers.LSTM(16, return_sequences=True)(frame_features_input, mask=mask_input)
-    x = keras.layers.LSTM(8)(x)
+    x = keras.layers.LSTM(116, return_sequences=True)(frame_features_input, mask=mask_input)
+    x = keras.layers.LSTM(38,dropout=0.2,return_sequences=True)(x)
+    x = keras.layers.LSTM(28,dropout=0.2,return_sequences=True)(x)
+    x = keras.layers.LSTM(18, dropout=0.2, return_sequences=True)(x)
     x = keras.layers.Dropout(0.3)(x)
-    x = keras.layers.Dense(8, activation="relu")(x)
-    output = keras.layers.Dense(len(class_vocab), activation="softmax")(x)
+    x = keras.layers.Dense(48, activation="relu")(x)
+    x = keras.layers.Flatten()(x)
+    output = keras.layers.Dense(3, activation="softmax")(x)
 
     rnn_model = keras.Model([frame_features_input, mask_input], output)
 

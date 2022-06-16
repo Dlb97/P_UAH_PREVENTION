@@ -225,7 +225,12 @@ def augment_dataset(video, labels):
                 flipped_video = np.array([tf.image.flip_left_right(j) for j in video[i]])
                 flipped_videos.append(flipped_video)
                 flipped_labels.append(np.array([0, 1, 0]))
-
+            #Here perform the other transformations and perform to flipped_videos and labels
+            saturated = np.array([tf.image.adjust_saturation(j,random.randint(0,100)) for j in video[i]])
+            bright = np.array([tf.image.adjust_brightness(j, random.random()) for j in video[i]])
+            bad_quality = np.array([tf.image.stateless_random_jpeg_quality(j,0, 20, (1,2)) for j in video[i]])
+            flipped_videos.extend([saturated,bright,bad_quality])
+            flipped_labels.extend([labels[i] for _ in range(3)])
     flipped_videos = np.array(flipped_videos)
     flipped_labels = np.array(flipped_labels)
     return np.concatenate((video, flipped_videos)), np.concatenate((labels, flipped_labels))

@@ -250,16 +250,19 @@ def save_videos_only_lc(lane_changes, detections, cap_path, output_file, output_
         object_id = v['object_id']
         label = str(v['lc_class'])
         start = v['start']
-        object_filtered = {k: v for k, v in detections[object_id].items() if (k >= start and k <= start + 20)}
         try:
-            images = np.stack([grab_roi_from_cap(cap_path, v, k, (224, 224), 2) for k, v in object_filtered.items()],
-                              axis=0)
-            v_name = save_individual_video('lc-only', str(object_id), start,
-                                           output_path, images,
-                                           (224, 224))
-            save_info(output_file, v_name, label)
-        except ValueError:
-            print('Error on lane change: ', k)
+            object_filtered = {k: v for k, v in detections[object_id].items() if (k >= start and k <= start + 20)}
+            try:
+                images = np.stack([grab_roi_from_cap(cap_path, v, k, (224, 224), 2) for k, v in object_filtered.items()],
+                                  axis=0)
+                v_name = save_individual_video('lc-only', str(object_id), start,
+                                               output_path, images,
+                                               (224, 224))
+                save_info(output_file, v_name, label)
+            except ValueError:
+                print('Error on lane change: ', k)
+        except KeyError:
+            pass
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ parser.add_argument('-dp' ,type=str ,help='path to the detections file' ,require
 parser.add_argument('-lp' ,type=str ,help='path to the lane changes file' ,required=True)
 parser.add_argument('-tte' ,type=int ,help='obs_horizon' ,required=True)
 parser.add_argument('-o' ,type=str ,help='name of file to store results', required=True)
+parser.add_argument('-sp' ,type=str ,help='path to save the video files before uploading them' ,required=True)
 args = parser.parse_args()
 
 
@@ -27,7 +28,7 @@ def read_lane_changes(file_path ,caption_path ,obs_horizon ,tte):
     """
     cap = cv2.VideoCapture(caption_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    all_frame s ={k :0 for k in range(frame_count)}
+    all_frames ={k :0 for k in range(frame_count)}
     lane_changes = {}
     id_counter = 1
     with open(file_path) as file:
@@ -244,7 +245,7 @@ def save_info(file_name, video_name, label):
             file.write('\n')
 
 
-def save_videos_only_lc(lane_changes, detections, cap_path, output_file):
+def save_videos_only_lc(lane_changes, detections, cap_path, output_file, output_path):
     for k, v in lane_changes.items():
         object_id = v['object_id']
         label = str(v['lc_class'])
@@ -254,7 +255,7 @@ def save_videos_only_lc(lane_changes, detections, cap_path, output_file):
             images = np.stack([grab_roi_from_cap(cap_path, v, k, (224, 224), 2) for k, v in object_filtered.items()],
                               axis=0)
             v_name = save_individual_video('lc-only', str(object_id), start,
-                                           '/Users/david/workspace/thesis/PREVENTION-DATASET/positive_samples/', images,
+                                           output_path, images,
                                            (224, 224))
             save_info(output_file, v_name, label)
         except ValueError:
@@ -264,5 +265,5 @@ def save_videos_only_lc(lane_changes, detections, cap_path, output_file):
 if __name__ == '__main__':
     all_frames, lane_changes = read_lane_changes(args.lp, args.cp, 0, args.tte)
     detections = create_tracker_dictionary(args.dp)
-    save_videos_only_lc(lane_changes, detections, args.dp, args.o)
+    save_videos_only_lc(lane_changes, detections, args.dp, args.o, args.sp)
 

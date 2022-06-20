@@ -6,7 +6,7 @@ args = parser.parse_args()
 
 ##
 
-def read_object_tracking(path_to_file):
+def read_object_tracking(path_to_file,threshold):
     """Reads the results of DEEP SORT ALGORITHM txt files to create and return a dictionary withe the following format
      { object_id: { frame_id : (x,y,w,h), frame_id : (x,y,w,h) } , object_id: { frame_id : (x,y,w,h), frame_id : (x,y,w,h) } } """
 
@@ -24,6 +24,8 @@ def read_object_tracking(path_to_file):
                 tracker[object] = {frame_id :(x ,y ,w ,h)}
             else:
                 tracker[object][frame_id] = (x ,y ,w ,h)
+    #Discard objects with low nº of observations
+    tracker = {k: v for k, v in tracker.items() if len(v) > threshold}
     return tracker
 
 
@@ -92,7 +94,7 @@ if __name__ == '__main__':
     frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     cap.set(cv2.CAP_PROP_POS_FRAMES ,0)
     success, img = cap.read()
-    detections = read_object_tracking('/Users/david/workspace/thesis/results_processed_videos/video_1/complete_v1.txt')
+    detections = read_object_tracking('/Users/david/workspace/thesis/results_processed_videos/video_1/complete_v1.txt',100)
     print(detections.keys())
     """
     for i in detections.keys():

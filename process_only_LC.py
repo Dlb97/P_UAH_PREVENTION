@@ -214,6 +214,7 @@ def save_individual_video(s3_folder, video_name, frame, local_path, video, desir
     """
     import cv2
     import boto3
+    import time
     s3 = boto3.client('s3')
     fps = 20
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')  # note the lower case
@@ -221,9 +222,11 @@ def save_individual_video(s3_folder, video_name, frame, local_path, video, desir
     key_name = video_name + '_' + str(frame) + '.mp4'
     success = vout.open(local_path + key_name, fourcc, fps, desired_size, True)
     for frame in range(len(video)):
+        print(video[frame])
         vout.write(video[frame])
     vout.release()
     cv2.destroyAllWindows()
+    time.sleep(1)
     s3_key = s3_folder + '/' + key_name
     s3.upload_file(local_path + key_name, Bucket='thesis-videos-dlb', Key=s3_key)
     return s3_key
@@ -251,13 +254,10 @@ def save_videos_only_lc(lane_changes, detections, cap_path, output_file, output_
         label = str(v['lc_class'])
         start = v['start']
         try:
-            object_filtered = {k: v for k, v in detections[object_id].items() if (k >= start and k <= start + 20)}
+            object_filtered = {k: v for k, v in detections[object_id].items() if (k > start and k <= start + 20)}
             try:
-                images = np.stack([grab_roi_from_cap(cap_path, v, k, (224, 224), 2) for k, v in object_filtered.items()],
-                                  axis=0)
-                v_name = save_individual_video('lc-only', str(object_id), start,
-                                               output_path, images,
-                                               (224, 224))
+                images = np.stack([grab_roi_from_cap(cap_path, v, k, (224, 224), 2) for k, v in object_filtered.items()],axis=0)
+                v_name = save_individual_video('lc-only', str(object_id), start,output_path, images,(224, 224))
                 save_info(output_file, v_name, label)
             except ValueError:
                 print('Error on lane change: ', k)
@@ -268,5 +268,5 @@ def save_videos_only_lc(lane_changes, detections, cap_path, output_file, output_
 if __name__ == '__main__':
     all_frames, lane_changes = read_lane_changes(args.lp, args.cp, 0, args.tte)
     detections = create_tracker_dictionary(args.dp)
-    save_videos_only_lc(lane_changes, detections, args.dp, args.o, args.sp)
+    save_videos_only_lc(lane_changes, detections, args.cp, args.o, args.sp)
 

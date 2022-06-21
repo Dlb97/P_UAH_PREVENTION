@@ -1,14 +1,31 @@
 
 import argparse
+from email.mime import image
 parser = argparse.ArgumentParser(description='Visualize resulst deep sort')
-parser.add_argument('-object' ,type=int ,help='object id to follow', required= True)
+parser.add_argument('-cp' ,type=str,help='path to video', required= True)
+parser.add_argument('-dp' ,type=str,help='path to detections', required= True)
+parser.add_argument('-n' ,type=str,help='name of the video', required= True)
+parser.add_argument('-t' ,type=int,help='thresold of number of observations', required= True)
+parser.add_argument('-o' ,type=str,help='file where to store video path and label', required= True)
+parser.add_argument('-c',type=str,help='path to checkpoint file',required=True)
+parser.add_argument('-r',type=str,help='resume where we left?',required=False)
 args = parser.parse_args()
 
-##
+"""
+python3 labeler.py -cp /Users/david/workspace/thesis/extra_videos/germany.mp4 -dp /Users/david/workspace/thesis/extra_videos/germany.txt -n germany -t 80 \
+-o /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/germany_info \
+-c /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/germany_checkpoints \
+-r True
+"""
 
-def read_object_tracking(path_to_file,threshold):
+def read_object_tracking(path_to_file,threshold,checkpoint_file,resume):
+
     """Reads the results of DEEP SORT ALGORITHM txt files to create and return a dictionary withe the following format
-     { object_id: { frame_id : (x,y,w,h), frame_id : (x,y,w,h) } , object_id: { frame_id : (x,y,w,h), frame_id : (x,y,w,h) } } """
+     { object_id: { frame_id : (x,y,w,h), frame_id : (x,y,w,h) } , object_id: { frame_id : (x,y,w,h), frame_id : (x,y,w,h) } }
+
+     args:
+        - resume : path to checkpoint file
+     """
 
     tracker = {}
     with open(path_to_file) as file:
@@ -24,14 +41,18 @@ def read_object_tracking(path_to_file,threshold):
                 tracker[object] = {frame_id :(x ,y ,w ,h)}
             else:
                 tracker[object][frame_id] = (x ,y ,w ,h)
-    #Discard objects with low nº of observations
-    tracker = {k: v for k, v in tracker.items() if len(v) > threshold}
+    #Discard objects with low nº of observations and resume labeling
+    if (resume == 'True'):
+        last_object = get_last_object_processed(checkpoint_file)
+        tracker = {k: v for k, v in tracker.items() if (len(v) > threshold and k > last_object)}
+    else:
+        tracker = {k: v for k, v in tracker.items() if len(v) > threshold}
     return tracker
 
 
 
 
-def visualize_results(cap ,object_id ,tracker, video_name,file_name):
+def visualize_results(cap ,object_id ,tracker, video_name,file_name,checkpoint_file):
     """Shows the detections for a specific object"""
     import cv2
     import time
@@ -40,26 +61,35 @@ def visualize_results(cap ,object_id ,tracker, video_name,file_name):
         cap.set(cv2.CAP_PROP_POS_FRAMES, k)
         success, img = cap.read()
         try:
-            cv2.rectangle(img ,(v[0] ,v[1]) ,(v[0 ] +v[2] ,v[1 ] +v[3]) ,(0 ,255 ,0) ,2)
+            cv2.rectangle(img ,(v[0] ,v[1]) ,(v[0] +v[2] ,v[1] +v[3]) ,(0 ,255 ,0) ,2)
             cv2.imshow('Results ' +str(object_id) ,img)
         except cv2.error:
-            pass
-        button = cv2.waitKey(3)
+            print('CV2ERROR for object {} at frame {}'.format(object_id,k))
+            print(v)
+            print(img)
+        button = cv2.waitKey(1)
+        print(button)
         if (button == ord('l') or button == ord('r')):
             frames = grabnext20(cap,appereances,k)
-            v_name =save_individual_video('data_labeler',video_name,k,'./data_labeler/selected_videos/',frames,(224,224))
-            save_info(file_name,video_name,button)
-    cap.release()
-    cv2.destroyAllWindows()
+            v_name =save_individual_video('data_labeler',video_name,k,'/Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/selected_videos/',frames,(224,224))
+            save_info(file_name,v_name,str(button))
+        elif button == ord('s'):
+            create_checkpoint(str(object_id),checkpoint_file)
+            break
+        elif button == -1:
+            pass
+    
 
 
 
-def visualize_all_results(cap ,tracker, video_name, file_name):
+
+def visualize_all_results(cap ,tracker, video_name, file_name,checkpoint_file):
     """Shows ALL the detections"""
     import cv2
     import time
     for o in tracker.keys():
-        visualize_results(cap,o,tracker,video_name, file_name)
+        visualize_results(cap,o,tracker,video_name, file_name,checkpoint_file)
+        time.sleep(2)
 
 
 def grabnext20(cap,appereances,frame):
@@ -160,26 +190,33 @@ def save_info(file_name,video_name,label):
             file.write('\n')
 
 
-##
 
-detections = read_object_tracking('/Users/david/workspace/thesis/results_processed_videos/video_1/complete_v1.txt')
-##
+def get_last_object_processed(path_to_checkpoint):
+    """Grabs the object id of the last object processed. With this function we can stop and restart the labeling from where we left
+    """
+    with open(path_to_checkpoint,'r') as file:
+        lines = file.read().splitlines()
+        return int(lines[-1])
+
+
+
+def create_checkpoint(object_id,checkpoint_file):
+    try:
+        with open(checkpoint_file, 'a') as file:
+            file.write(object_id)
+            file.write('\n')
+    except FileNotFoundError:
+        with open(checkpoint_file, 'w') as file:
+            file.write(object_id)
+            file.write('\n')
+
+
+
+
+
+
 if __name__ == '__main__':
     import cv2
-    import time
-
-    # cap = cv2.VideoCapture('/Users/david/workspace/thesis/results_processed_videos/video_1/complete_v1.mp4')
-    cap = cv2.VideoCapture('/Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4')
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    cap.set(cv2.CAP_PROP_POS_FRAMES ,0)
-    success, img = cap.read()
-    detections = read_object_tracking('/Users/david/workspace/thesis/results_processed_videos/video_1/complete_v1.txt',100)
-    print(detections.keys())
-    """
-    for i in detections.keys():
-        visualize_results(cap,i,detections)
-    #visualize_results(cap,args.object,detections)
-        time.sleep(1)
-    """
-    visualize_all_results(cap,detections)
+    cap = cv2.VideoCapture(args.cp)
+    detections = read_object_tracking(args.dp,args.t,args.c,args.r)
+    visualize_all_results(cap,detections,args.n,args.o,args.c)

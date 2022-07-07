@@ -27,6 +27,7 @@ Parser:
 
 import argparse
 parser = argparse.ArgumentParser(description="Train a specific ML model on the UAH PREVENTION DATASET and store its results")
+parser.add_argument('-load',type=bool,help='Load np files ?',required=True)
 parser.add_argument('-m',type=str,help='Model to use',required=True)
 parser.add_argument('-new',type=bool,help='Use New approach (Behavior recognition and not prediction)',required=True)
 parser.add_argument('-fs',type=bool,help='Save the extracted features into np file?',required=True)
@@ -57,58 +58,73 @@ if __name__ == '__main__':
     """This section focuses on reading the csv that contains the path and label to each of the individual videos. Balancing
     the dataset so that there are a proportionate number of classes and reading the only presents in s3"""
 
-
-    lc, no_lc = get_balanced_dataset(750)
-    #Add PARSER HERE TO INCLUDE EXTRA VIDEOS + ONLY_LC. THOSE WILL BE OUR LC
-    if args.new:
-        extra_videos = pd.read_csv('../extra_videos.csv')
-        only_lc = pd.read_csv('../ONLY_LC.txt',names=['path','label'],header=None)
-        lc = pd.concat([only_lc, extra_videos])
-    df = pd.concat([lc, no_lc])
-    df = df.reset_index()
-    X_train, X_test, y_train, y_test = train_test_split(df["path"], df["label"], test_size=0.2, random_state=19)
-
-    train = pd.concat([X_train, y_train], axis=1)
-    test = pd.concat([X_test, y_test], axis=1)
-
-    train = filter_videos(train)
-    test = filter_videos(test)
+    if args.load:
+        if args.f:
+            X_train_features = np.load('./processed_data/X_train_features_' + args.n + '.npy')
+            X_train_mask = np.load('./processed_data/X_train_mask_' + args.n + '.npy')
+            X_test_features = np.load('./processed_data/X_test_features_' + args.n + '.npy')
+            X_test_mask = np.load('./processed_data/X_test_mask_' + args.n + '.npy')
+            y_train_features = np.load('./processed_data/y_train_features_' + args.n + '.npy')
+            y_test_features = np.load('./processed_data/y_test_features_' + args.n + '.npy')
+        else:
+            X_train = np.load('./processed_data/X_train_NO_features_' + args.n + '.npy')
+            X_test = np.load('./processed_data/X_test_NO_features_' + args.n + '.npy')
+            y_train = np.load('./processed_data/Y_train_NO_features_' + args.n + '.npy')
+            y_test = np.load('./processed_data/Y_test_NO_features_' + args.n + '.npy')
 
 
-    print('Loading Videos')
-    X_train, y_train = prepare_input_without_feature_extractor(train)
-    X_test, y_test = prepare_input_without_feature_extractor(test)
-    if args.fs:
-        np.save('./processed_data/X_train_NO_features_' + args.n + '.npy', X_train)
-        np.save('./processed_data/X_test_NO_features_' + args.n + '.npy', X_test)
-        np.save('./processed_data/Y_train_NO_features_' + args.n + '.npy', y_train)
-        np.save('./processed_data/Y_test_NO_features_' + args.n + '.npy', y_test)
+    else:
+        lc, no_lc = get_balanced_dataset(750)
+        #Add PARSER HERE TO INCLUDE EXTRA VIDEOS + ONLY_LC. THOSE WILL BE OUR LC
+        if args.new:
+            extra_videos = pd.read_csv('../extra_videos.csv')
+            only_lc = pd.read_csv('../ONLY_LC.txt',names=['path','label'],header=None)
+            lc = pd.concat([only_lc, extra_videos])
+        df = pd.concat([lc, no_lc])
+        df = df.reset_index()
+        X_train, X_test, y_train, y_test = train_test_split(df["path"], df["label"], test_size=0.2, random_state=19)
+
+        train = pd.concat([X_train, y_train], axis=1)
+        test = pd.concat([X_test, y_test], axis=1)
+
+        train = filter_videos(train)
+        test = filter_videos(test)
 
 
-    if args.aug:
-
-        X_train, y_train = augment_dataset(X_train,y_train)
-
-
-
-
-    """Perform feature extraction"""
-
-    if args.f:
-        print('Performing feature extraction')
-        X_train = extract_features(X_train)
-        X_test = extract_features(X_test)
-        y_train = prepare_labels(y_train)
-        y_test = prepare_labels(y_test)
-
+        print('Loading Videos')
+        X_train, y_train = prepare_input_without_feature_extractor(train)
+        X_test, y_test = prepare_input_without_feature_extractor(test)
         if args.fs:
-            print('Saving features')
-            np.save('./processed_data/X_train_features_' + args.n + '.npy' , X_train[0])
-            np.save('./processed_data/X_train_mask_' + args.n + '.npy', X_train[1])
-            np.save('./processed_data/X_test_features_' + args.n + '.npy', X_test[0])
-            np.save('./processed_data/X_test_mask_' + args.n + '.npy', X_test[1])
-            np.save('./processed_data/y_train_features_' + args.n + '.npy', y_train)
-            np.save('./processed_data/y_test_features_' + args.n + '.npy', y_test)
+            np.save('./processed_data/X_train_NO_features_' + args.n + '.npy', X_train)
+            np.save('./processed_data/X_test_NO_features_' + args.n + '.npy', X_test)
+            np.save('./processed_data/Y_train_NO_features_' + args.n + '.npy', y_train)
+            np.save('./processed_data/Y_test_NO_features_' + args.n + '.npy', y_test)
+
+
+        if args.aug:
+
+            X_train, y_train = augment_dataset(X_train,y_train)
+
+
+
+
+        """Perform feature extraction"""
+
+        if args.f:
+            print('Performing feature extraction')
+            X_train = extract_features(X_train)
+            X_test = extract_features(X_test)
+            y_train = prepare_labels(y_train)
+            y_test = prepare_labels(y_test)
+
+            if args.fs:
+                print('Saving features')
+                np.save('./processed_data/X_train_features_' + args.n + '.npy' , X_train[0])
+                np.save('./processed_data/X_train_mask_' + args.n + '.npy', X_train[1])
+                np.save('./processed_data/X_test_features_' + args.n + '.npy', X_test[0])
+                np.save('./processed_data/X_test_mask_' + args.n + '.npy', X_test[1])
+                np.save('./processed_data/y_train_features_' + args.n + '.npy', y_train)
+                np.save('./processed_data/y_test_features_' + args.n + '.npy', y_test)
 
 
 
@@ -123,7 +139,7 @@ if __name__ == '__main__':
 
     """Need to pass both features and mask in the case we extracted them"""
     if args.f :
-        history = model.fit([X_train[0],X_train[1]],y_train, callbacks=[model_checkpoint_callback], validation_data=[X_test, y_test],
+        history = model.fit([X_train_features,X_train_mask],y_train_features, callbacks=[model_checkpoint_callback], validation_data=[X_test_features, y_test_features],
                         epochs=args.e, batch_size=args.b)
     else:
         history = model.fit(X_train, y_train, callbacks=[model_checkpoint_callback], validation_data=[X_test, y_test],epochs=args.e, batch_size=args.b)

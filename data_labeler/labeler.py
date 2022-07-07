@@ -1,6 +1,7 @@
 
 import argparse
 from email.mime import image
+from turtle import shape
 parser = argparse.ArgumentParser(description='Visualize resulst deep sort')
 parser.add_argument('-cp' ,type=str,help='path to video', required= True)
 parser.add_argument('-dp' ,type=str,help='path to detections', required= True)
@@ -12,10 +13,12 @@ parser.add_argument('-r',type=str,help='resume where we left?',required=False)
 args = parser.parse_args()
 
 """
-python3 labeler.py -cp /Users/david/workspace/thesis/extra_videos/germany.mp4 -dp /Users/david/workspace/thesis/extra_videos/germany.txt -n germany -t 80 \
--o /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/germany_info \
--c /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/germany_checkpoints \
--r True
+python3 labeler.py -cp /Users/david/workspace/thesis/extra_videos/india.mp4 -dp /Users/david/workspace/thesis/extra_videos/india.txt -n netherlands -t 80 \
+-o /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/netherlands_info \
+-c /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/netherlands_checkpoints \
+-r False
+
+python track.py --source /home/ubuntu/<video> --strong-sort-weights osnet_x0_25_market1501.pt --classes 1 2 3 5 7 --save-txt
 """
 
 def read_object_tracking(path_to_file,threshold,checkpoint_file,resume):
@@ -62,7 +65,7 @@ def visualize_results(cap ,object_id ,tracker, video_name,file_name,checkpoint_f
         success, img = cap.read()
         try:
             cv2.rectangle(img ,(v[0] ,v[1]) ,(v[0] +v[2] ,v[1] +v[3]) ,(0 ,255 ,0) ,2)
-            cv2.imshow('Results ' +str(object_id) ,img)
+            cv2.imshow('Results ' ,img)
         except cv2.error:
             print('CV2ERROR for object {} at frame {}'.format(object_id,k))
             print(v)
@@ -75,6 +78,8 @@ def visualize_results(cap ,object_id ,tracker, video_name,file_name,checkpoint_f
             save_info(file_name,v_name,str(button))
         elif button == ord('s'):
             create_checkpoint(str(object_id),checkpoint_file)
+            break
+        elif button == ord('p'):
             break
         elif button == -1:
             pass
@@ -102,7 +107,15 @@ def grabnext20(cap,appereances,frame):
             if f > frame:
                 cap.set(cv2.CAP_PROP_POS_FRAMES,f )
                 success, img = cap.read()
-                img = img[c[1]:c[1] + c[3],c[0] : c[0] + c[2]]
+                #img = img[c[1]:c[1] + c[3],c[0] : c[0] + c[2]]
+                #Include context in the image
+                h1 = round(c[3] / 2)
+                h0 = max(0,c[1]-h1)
+                h2 = min(c[1]+c[3]+h1,img.shape[0])
+                w1 = round(c[2]/2)
+                w0 = max(0,c[0]-w1)
+                w2 = min(c[0]+c[2]+w1,img.shape[1])
+                img = img[h0:h2,w0:w2]
                 frames.append(pad_image((224,224),img))
                 counter+=1
         else:

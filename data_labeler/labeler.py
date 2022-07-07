@@ -13,10 +13,10 @@ parser.add_argument('-r',type=str,help='resume where we left?',required=False)
 args = parser.parse_args()
 
 """
-python3 labeler.py -cp /Users/david/workspace/thesis/extra_videos/india.mp4 -dp /Users/david/workspace/thesis/extra_videos/india.txt -n netherlands -t 80 \
--o /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/netherlands_info \
--c /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/netherlands_checkpoints \
--r False
+python3 labeler.py -cp /Users/david/workspace/thesis/extra_videos/india.mp4 -dp /Users/david/workspace/thesis/extra_videos/india.txt -n india -t 100 \
+-o /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/india_info \
+-c /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/data_labeler/checkpoints/india_checkpoints \
+-r True
 
 python track.py --source /home/ubuntu/<video> --strong-sort-weights osnet_x0_25_market1501.pt --classes 1 2 3 5 7 --save-txt
 """

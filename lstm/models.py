@@ -5,27 +5,27 @@ from keras.layers import Conv2D, BatchNormalization, MaxPool2D, GlobalMaxPool2D,
 def build_convnet(shape=(224, 224, 3)):
     momentum = .9
     model = keras.Sequential()
-    model.add(Conv2D(64, (3 ,3), input_shape=shape,
+    model.add(Conv2D(14, (3 ,3), input_shape=shape,
                      padding='same', activation='relu'))
-    model.add(Conv2D(64, (3 ,3), padding='same', activation='relu'))
+    model.add(Conv2D(14, (3 ,3), padding='same', activation='relu'))
     model.add(BatchNormalization(momentum=momentum))
 
     model.add(MaxPool2D())
 
-    model.add(Conv2D(128, (3 ,3), padding='same', activation='relu'))
-    model.add(Conv2D(128, (3 ,3), padding='same', activation='relu'))
+    model.add(Conv2D(22, (3 ,3), padding='same', activation='relu'))
+    model.add(Conv2D(22, (3 ,3), padding='same', activation='relu'))
     model.add(BatchNormalization(momentum=momentum))
 
     model.add(MaxPool2D())
 
-    model.add(Conv2D(256, (3 ,3), padding='same', activation='relu'))
-    model.add(Conv2D(256, (3 ,3), padding='same', activation='relu'))
+    model.add(Conv2D(32, (3 ,3), padding='same', activation='relu'))
+    #model.add(Conv2D(256, (3 ,3), padding='same', activation='relu'))
     model.add(BatchNormalization(momentum=momentum))
 
     model.add(MaxPool2D())
 
-    model.add(Conv2D(512, (3 ,3), padding='same', activation='relu'))
-    model.add(Conv2D(512, (3 ,3), padding='same', activation='relu'))
+    model.add(Conv2D(51, (3 ,3), padding='same', activation='relu'))
+    #model.add(Conv2D(512, (3 ,3), padding='same', activation='relu'))
     model.add(BatchNormalization(momentum=momentum))
 
     # flatten...
@@ -66,13 +66,13 @@ def action_model_LSTM(shape=(20,224, 224, 3), nbout=3):
     model.add(TimeDistributed(convnet, input_shape=shape))
     # here, you can also use GRU or LSTM
     model.add(LSTM(64,return_sequences=True))
-    model.add(LSTM(24, return_sequences=True,dropout=0.2))
-    model.add(LSTM(24, return_sequences=True,dropout=0.2))
-    model.add(LSTM(20, return_sequences=False))
+    model.add(LSTM(14, return_sequences=True,dropout=0.2))
+    model.add(LSTM(14, return_sequences=True,dropout=0.2))
+    model.add(LSTM(10, return_sequences=False))
     model.add(Dropout(.5))
-    model.add(Dense(22, activation='relu'))
+    model.add(Dense(12, activation='relu'))
     model.add(Dropout(.5))
-    model.add(Dense(64, activation='relu'))
+    model.add(Dense(24, activation='relu'))
     model.add(Dense(nbout, activation='softmax'))
     return model
 

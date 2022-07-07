@@ -162,7 +162,9 @@ def prepare_all_videos(df,feature_extractor,num_features=2048):
 
 
 
-def get_balanced_dataset():
+def get_balanced_dataset(n):
+    """Generates the dfs that contains the path to the video and its label. Two
+    dfs are returned, one containing only LC and other containing no LC"""
     csv_files = ['v' + str(i) for i in range(3,12) if i != 6 ]
     dfs = []
     for i in csv_files:
@@ -173,7 +175,7 @@ def get_balanced_dataset():
     lane_changes = df[df["label"] != '[1 0 0]']
     lane_changes = lane_changes[["path","label"]]
     no_lane_changes = df[df["label"] == '[1 0 0]']
-    negative_subset = get_negative_subset(len(lane_changes),no_lane_changes)
+    negative_subset = get_negative_subset(n,no_lane_changes)
     return lane_changes, negative_subset
 
 
@@ -241,7 +243,7 @@ def extract_features(X_train,features=2048):
     """Extracts the features from all videos
     :args
     - X_train: 5d array [N 20 224 224 3]
-    - features: nº of fratures to be stracted
+    - features: nº of features to be extracted
     :returns
     - tuple of 2 arrays the features and the mask . ([N,20,2048],[])
 

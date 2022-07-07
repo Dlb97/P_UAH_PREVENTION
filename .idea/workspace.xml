@@ -3,9 +3,14 @@
   <component name="ChangeListManager">
     <list default="true" id="4da01e1d-f127-43f2-94f0-3bed3f7201a4" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_labeler/labeler.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_labeler/labeler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_labeler/selected_videos.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_labeler/selected_videos/test_0.mp4" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/lstm/functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/lstm/functions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lstm/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/lstm/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lstm/temporary_video.avi" beforeDir="false" afterPath="$PROJECT_DIR$/lstm/temporary_video.avi" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lstm/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/lstm/train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/temporary_video.avi" beforeDir="false" afterPath="$PROJECT_DIR$/temporary_video.avi" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/temporary_video.avi" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,9 +37,14 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Python" />
+    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Python&#10;GitIgnore" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -46,5 +56,16 @@
       <updated>1653382653245</updated>
     </task>
     <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/lstm/models.py</url>
+          <line>85</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

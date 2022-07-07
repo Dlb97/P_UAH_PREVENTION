@@ -22,7 +22,7 @@ Parser:
 
 #python3 train.py -m lstm -aug True -f False -e 6 -b 24 -c True
 #python3 train.py -m lstm_extractor -aug True -f True -e 6 -b 32 -c True
-#python3 train.py -m lstm_extractor -new True -fs True -n new_no_aug -aug False -f True -e 6 -b 32 -c True
+#python3 train.py -m lstm_extractor -new True -fs True -n new_no_aug -aug False -f True -e 20 -b 32 -c True
 #python3 train.py -m lstm -new True -fs False -n new_no_aug -aug False -f False -e 10 -b 32 -c True
 
 import argparse
@@ -78,6 +78,11 @@ if __name__ == '__main__':
     print('Loading Videos')
     X_train, y_train = prepare_input_without_feature_extractor(train)
     X_test, y_test = prepare_input_without_feature_extractor(test)
+    if args.fs:
+        np.save('./processed_data/X_train_NO_features_' + args.n + '.npy', X_train)
+        np.save('./processed_data/X_test_NO_features_' + args.n + '.npy', X_test)
+        np.save('./processed_data/Y_train_NO_features_' + args.n + '.npy', y_train)
+        np.save('./processed_data/Y_test_NO_features_' + args.n + '.npy', y_test)
 
 
     if args.aug:
@@ -102,6 +107,8 @@ if __name__ == '__main__':
             np.save('./processed_data/X_train_mask_' + args.n + '.npy', X_train[1])
             np.save('./processed_data/X_test_features_' + args.n + '.npy', X_test[0])
             np.save('./processed_data/X_test_mask_' + args.n + '.npy', X_test[1])
+            np.save('./processed_data/y_train_features_' + args.n + '.npy', y_train)
+            np.save('./processed_data/y_test_features_' + args.n + '.npy', y_test)
 
 
 

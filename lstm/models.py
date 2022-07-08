@@ -106,7 +106,7 @@ def GRU_extractor(df,num_features=2048):
     x = keras.layers.GRU(10)(x)
     x = keras.layers.Dropout(0.2)(x)
     x = keras.layers.Dense(18, activation="relu")(x)
-    output = keras.layers.Dense(1, activation="softmax")(x)
+    output = keras.layers.Dense(3, activation="softmax")(x)
 
     rnn_model = keras.Model([frame_features_input, mask_input], output)
 

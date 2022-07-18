@@ -1,3 +1,4 @@
+
 import SSL_functions as f
 import numpy as np
 import tensorflow as tf
@@ -17,8 +18,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.applications import resnet
 
 
-#python3 -video /Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4 -weights /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/SSL/checkpoints/cp.ckpt
-
+#python3 OrderNetwork.py -video /Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4 -weights ./checkpoints/order.ckpt
 
 target_shape = (224, 224)
 
@@ -32,15 +32,18 @@ args = parser.parse_args()
 
 
 
+
+
+
 if __name__ == '__main__':
 
     #CREATE NETWORK
     embedding = f.create_base_cnn()
-    order_network = f.create_Binary_order_prediction_network(embedding)
+    order_network = f.create_order_prediction_network(embedding)
     SiameseModel = f.SiameseModel(order_network)
     SiameseModel.compile(
         optimizer=tf.keras.optimizers.Adam(),
-        loss=tf.keras.losses.BinaryCrossentropy(from_logits=False),
+        loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
         metrics=['accuracy']
     )
 
@@ -50,7 +53,7 @@ if __name__ == '__main__':
         print('Loading Weights')
         SiameseModel.load_weights(args.weights)
 
-    checkpoints_Binary_model = f.define_checkpoint(args.weights)
+    checkpoints_order_model = f.define_checkpoint(args.weights)
 
     caption_path = args.video
     cap = cv2.VideoCapture(caption_path)
@@ -58,11 +61,12 @@ if __name__ == '__main__':
     start_test_frame = round((total_frames * 0.8))
 
     #Process both train and evaluate test to be able to perform the checkpoints
-    a, p, n, labels = f.process_video(cap, 0, start_test_frame)
-    test_a, test_p, test_n, test_labels = f.process_video(cap, start_test_frame, total_frames - 100)
+    a, p, n, labels = f.process_video_order(cap, 0, start_test_frame)
+    test_a, test_p, test_n, test_labels = f.process_video_order(cap, start_test_frame, total_frames - 100)
 
     #Save the best model based on the val accuracy
-    SiameseModel.fit([a, p, n], labels, validation_data=([test_a,test_p,test_n],test_labels) ,epochs=3, callbacks=[checkpoints_Binary_model])
+    SiameseModel.fit([a, p, n], labels, validation_data=([test_a,test_p,test_n],test_labels) ,epochs=3, callbacks=[checkpoints_order_model])
+
 
 
 

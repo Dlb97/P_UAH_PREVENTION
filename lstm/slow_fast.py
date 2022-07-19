@@ -302,10 +302,10 @@ def SlowFast(clip_shape=[20, 220, 220, 3], num_class=3, alpha=8, beta=1 / 8, tau
 
 def load_processed_data():
     import numpy as np
-    X_train = np.load('./processed_data/X_train_NO_features_new_no_aug.npy',allow_pickle=True)
-    y_train = np.load('./processed_data/Y_train_NO_features_new_no_aug.npy', allow_pickle=True)
-    X_test = np.load('./processed_data/X_test_NO_features_new_no_aug.npy', allow_pickle=True)
-    y_test = np.load('./processed_data/Y_test_NO_features_new_no_aug.npy',allow_pickle=True)
+    X_train = np.load('./processed_data/X_train_NO_features_AUG.npy',allow_pickle=True)
+    y_train = np.load('./processed_data/Y_train_NO_features_AUG.npy', allow_pickle=True)
+    X_test = np.load('./processed_data/X_test_NO_features_AUG.npy', allow_pickle=True)
+    y_test = np.load('./processed_data/Y_test_NO_features_AUG.npy',allow_pickle=True)
     """Temporal FIX HERE, IF THERE ARE X MISSLABELED OBSERVATIONS IS OK """
     X_train = [X_train[i][:20] for i in range(len(X_train)) if X_train[i].shape >= (20, 224, 224, 3)]
     X_train = np.stack(X_train)

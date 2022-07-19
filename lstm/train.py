@@ -80,6 +80,7 @@ if __name__ == '__main__':
             extra_videos = pd.read_csv('../extra_videos.csv')
             only_lc = pd.read_csv('../ONLY_LC.txt',names=['path','label'],header=None)
             lc = pd.concat([only_lc, extra_videos])
+
         df = pd.concat([lc, no_lc])
         df = df.reset_index()
         X_train, X_test, y_train, y_test = train_test_split(df["path"], df["label"], test_size=0.2, random_state=19)
@@ -101,8 +102,8 @@ if __name__ == '__main__':
             np.save('./processed_data/Y_test_NO_features_' + args.n + '.npy', y_test)
 
 
-        if args.aug:
-
+        if args.aug == True:
+            print('Augmenting data')
             X_train, y_train = augment_dataset(X_train,y_train)
 
 
@@ -110,14 +111,14 @@ if __name__ == '__main__':
 
         """Perform feature extraction"""
 
-        if args.f:
+        if args.f == True:
             print('Performing feature extraction')
             X_train = extract_features(X_train)
             X_test = extract_features(X_test)
             y_train = prepare_labels(y_train)
             y_test = prepare_labels(y_test)
 
-            if args.fs:
+            if args.fs == True:
                 print('Saving features')
                 np.save('./processed_data/X_train_features_' + args.n + '.npy' , X_train[0])
                 np.save('./processed_data/X_train_mask_' + args.n + '.npy', X_train[1])
@@ -138,7 +139,7 @@ if __name__ == '__main__':
                                                                    save_best_only=True)
 
     """Need to pass both features and mask in the case we extracted them"""
-    if args.f :
+    if args.f == True :
         history = model.fit([X_train_features,X_train_mask],y_train_features, callbacks=[model_checkpoint_callback], validation_data=[X_test_features, y_test_features],
                         epochs=args.e, batch_size=args.b)
     else:

@@ -17,7 +17,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.applications import resnet
 
 
-#python3 -video /Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4 -weights /Users/david/workspace/thesis/thesis_repo/P_UAH_PREVENTION/SSL/checkpoints/cp.ckpt
+#python3 BN.py -video /Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4 -weights ./checkpoints/cp.ckpt
 
 
 target_shape = (224, 224)

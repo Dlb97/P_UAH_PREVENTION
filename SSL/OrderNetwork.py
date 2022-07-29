@@ -19,7 +19,7 @@ from tensorflow.keras.applications import resnet
 
 
 #python3 OrderNetwork.py -video /Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4 -weights ./checkpoints/order.ckpt
-
+#python3 BN.py -video /home/ec2-user/drive_videos/Bangkok_4K_-_Driving_Downtown_-_Thailand-GuyazY5xtuI.mp4 -weights ./checkpoints_B/Border.ckpt
 target_shape = (224, 224)
 
 

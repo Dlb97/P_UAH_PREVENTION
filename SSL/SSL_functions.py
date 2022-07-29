@@ -21,7 +21,7 @@ from tensorflow.keras.applications import resnet
 target_shape = (224, 224)
 
 
-
+"""
 import argparse
 parser = argparse.ArgumentParser(description="Train Siamese Model")
 parser.add_argument('-video',type=str,help='path to video',required=True)
@@ -32,7 +32,7 @@ args = parser.parse_args()
 
 
 
-"""MODEL:
+MODEL:
 
 BASE CNN ----> EMBEDDING --- > SIAMESE"""
 
@@ -277,6 +277,22 @@ def remove_n_smallest(n,items):
 
 
 
+def remove_n_smallest(n,items):
+    """Removes the n smallest flows while preserving the object
+    try"""
+    try:
+        for _ in range(n):
+            m = min(items)
+            items = [i for i in items if i != m]
+        return items
+
+    except ValueError:
+        print('Error n smallest')
+        return [items[0],items[8],items[15]]
+
+
+
+
 def filter_frames(v,all_flows,filtered_flows):
     """Returns those frames with the highest optical flow"""
     frames = []
@@ -322,6 +338,140 @@ def define_checkpoint(path):
 
 
 
+
+target_shape = (224, 224)
+
+
+
+def remove_wrong_observations(x, y):
+    indices = []
+    for i in range(len(x)):
+        if x[i].shape == (20, 224, 224, 3):
+            indices.append(i)
+    return np.take(x, indices, 0), np.take(y, indices, 0)
+
+
+def load_processed_data(x_train_path, y_train_path, x_test_path, y_test_path):
+    import numpy as np
+    X_test = np.load(x_test_path, allow_pickle=True)
+    y_test = np.load(y_test_path, allow_pickle=True)
+    X_test, y_test = remove_wrong_observations(X_test, y_test)
+    X_test = [X_test[i][:20] for i in range(len(X_test)) if X_test[i].shape >= (20, 224, 224, 3)]
+    X_test = np.stack(X_test)
+    X_train = np.load(x_train_path, allow_pickle=True)
+    y_train = np.load(y_train_path, allow_pickle=True)
+    X_train, y_train = remove_wrong_observations(X_train, y_train)
+    X_train = [X_train[i][:20] for i in range(len(X_train)) if X_train[i].shape >= (20, 224, 224, 3)]
+    X_train = np.stack(X_train)
+    return X_train, y_train, X_test, y_test
+
+
+def create_classifier_order(shape):
+    """Creates the classifer that goes on top of the SSL order network"""
+    classifier_input = layers.Input(shape=(shape), name="input_classifier")
+    x = layers.Dense(40, activation='relu')(classifier_input)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(160, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(160, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(40, activation='relu')(x)
+    classifier_output = layers.Dense(3, activation='softmax', name='classifier_output')(x)
+    classifier = Model(classifier_input, classifier_output, name="classifier")
+    classifier.summary()
+    return classifier
+
+
+def balance_dataset(X_train, y_train):
+    balanced_X_train = []
+    balanced_y_train = []
+    left = 0
+    right = 0
+    center = 0
+    min_class = count_min_class(y_train)
+    for i in range(len(X_train)):
+        l = y_train[i] == np.array([0, 1, 0])
+        r = y_train[i] == np.array([0, 0, 1])
+        c = y_train[i] == np.array([1, 0, 0])
+
+        if l.all():
+            left += 1
+            if left <= min_class:
+                balanced_X_train.append(X_train[i])
+                balanced_y_train.append(y_train[i])
+        elif r.all():
+            right += 1
+            if right <= min_class:
+                balanced_X_train.append(X_train[i])
+                balanced_y_train.append(y_train[i])
+        elif c.all():
+            center += 1
+            if center <= min_class:
+                balanced_X_train.append(X_train[i])
+                balanced_y_train.append(y_train[i])
+
+    return balanced_X_train, balanced_y_train
+
+
+def count_min_class(y_train):
+    left = 0
+    right = 0
+    center = 0
+    for i in range(len(y_train)):
+        l = y_train[i] == np.array([0, 1, 0])
+        r = y_train[i] == np.array([0, 0, 1])
+        c = y_train[i] == np.array([1, 0, 0])
+        if l.all():
+            left += 1
+
+        elif r.all():
+            right += 1
+
+        elif c.all():
+            center += 1
+
+    return min([left, right, center])
+
+
+
+def process_video_lc(cap):
+    a = []
+    p = []
+    n = []
+    no_errors = []
+    for i in range(cap.shape[0]):
+        print('Item',i)
+        try:
+            v = cap[i]
+            obs = prepare_observations_lc(v)
+
+
+            a.append(obs[0])
+            p.append(obs[1])
+            n.append(obs[2])
+            no_errors.append(i)
+        except IndexError:
+            print('Custom Index error ')
+
+
+    return np.array(a),np.array(p),np.array(n),no_errors
+
+
+
+
+def prepare_observations_lc(v):
+    """Processs the data according to the BINARY PREDICTION NETWORK"""
+    optical_flows = [abs(np.mean(compute_optical_flow(v[i],v[i+1]))) for i in range(0,len(v)-1)]
+    try:
+        filtered_flows = remove_n_smallest(16,optical_flows)
+        sampled_frames = filter_frames(v,optical_flows,filtered_flows)
+    except ValueError:
+        sampled_frames = [v[0],v[8],v[15]]
+    return sampled_frames
 
 
 

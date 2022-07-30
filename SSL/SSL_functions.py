@@ -355,13 +355,13 @@ def load_processed_data(x_train_path, y_train_path, x_test_path, y_test_path):
     import numpy as np
     X_test = np.load(x_test_path, allow_pickle=True)
     y_test = np.load(y_test_path, allow_pickle=True)
-    X_test, y_test = remove_wrong_observations(X_test, y_test)
     X_test = [X_test[i][:20] for i in range(len(X_test)) if X_test[i].shape >= (20, 224, 224, 3)]
+    X_test, y_test = remove_wrong_observations(X_test, y_test)
     X_test = np.stack(X_test)
     X_train = np.load(x_train_path, allow_pickle=True)
     y_train = np.load(y_train_path, allow_pickle=True)
-    X_train, y_train = remove_wrong_observations(X_train, y_train)
     X_train = [X_train[i][:20] for i in range(len(X_train)) if X_train[i].shape >= (20, 224, 224, 3)]
+    X_train, y_train = remove_wrong_observations(X_train, y_train)
     X_train = np.stack(X_train)
     return X_train, y_train, X_test, y_test
 

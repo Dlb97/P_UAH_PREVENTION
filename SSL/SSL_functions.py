@@ -348,6 +348,9 @@ def remove_wrong_observations(x, y):
     for i in range(len(x)):
         if x[i].shape == (20, 224, 224, 3):
             indices.append(i)
+        elif x[i].shape == (21, 224, 224, 3):
+            indices.append(i)
+            x[i] = x[i][:20]
     return np.take(x, indices, 0), np.take(y, indices, 0)
 
 
@@ -355,12 +358,12 @@ def load_processed_data(x_train_path, y_train_path, x_test_path, y_test_path):
     import numpy as np
     X_test = np.load(x_test_path, allow_pickle=True)
     y_test = np.load(y_test_path, allow_pickle=True)
-    X_test = [X_test[i][:20] for i in range(len(X_test)) if X_test[i].shape >= (20, 224, 224, 3)]
+    #X_test = [X_test[i][:20] for i in range(len(X_test)) if X_test[i].shape >= (20, 224, 224, 3)]
     X_test, y_test = remove_wrong_observations(X_test, y_test)
     X_test = np.stack(X_test)
     X_train = np.load(x_train_path, allow_pickle=True)
     y_train = np.load(y_train_path, allow_pickle=True)
-    X_train = [X_train[i][:20] for i in range(len(X_train)) if X_train[i].shape >= (20, 224, 224, 3)]
+    #X_train = [X_train[i][:20] for i in range(len(X_train)) if X_train[i].shape >= (20, 224, 224, 3)]
     X_train, y_train = remove_wrong_observations(X_train, y_train)
     X_train = np.stack(X_train)
     return X_train, y_train, X_test, y_test
@@ -444,19 +447,17 @@ def process_video_lc(cap):
     n = []
     no_errors = []
     for i in range(cap.shape[0]):
-        print('Item',i)
+        print('Item', i)
         try:
             v = cap[i]
-            obs = prepare_observations_lc(v)
-
-
-            a.append(obs[0])
-            p.append(obs[1])
-            n.append(obs[2])
-            no_errors.append(i)
+            obs = np.stack(prepare_observations_lc(v))
+            if obs.shape == (3, 224, 224, 3):
+                a.append(obs[0])
+                p.append(obs[1])
+                n.append(obs[2])
+                no_errors.append(i)
         except IndexError:
-            print('Custom Index error ')
-
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     return np.array(a),np.array(p),np.array(n),no_errors
 

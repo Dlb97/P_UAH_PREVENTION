@@ -155,6 +155,30 @@ def create_Binary_order_prediction_network(embedding):
     return order_network
 
 
+
+
+
+def create_Alexnet_Binary_order_prediction_network(embedding):
+    anchor_input = layers.Input(name="anchor",shape=target_shape + (3,))
+    positive_input = layers.Input(name="positive",shape = target_shape + (3,))
+    negative_input = layers.Input(name="negative",shape = target_shape + (3,))
+
+
+    inputs_apn = layers.concatenate([
+        embedding(anchor_input),
+        embedding(positive_input),
+        embedding(negative_input)]
+    )
+
+    x = layers.Dense(1,activation='sigmoid',name='output')(inputs_apn)
+    order_network = Model(inputs=[anchor_input,positive_input,negative_input],outputs=x)
+
+
+
+    return order_network
+
+
+
 #----------------------------------------------------------------
 
 
@@ -222,6 +246,31 @@ def process_video(cap,start,end):
     return np.array(a),np.array(p),np.array(n),np.array(labels)
 
 
+
+def process_video_original(cap,start,end):
+    a = []
+    p = []
+    n = []
+    labels = []
+    while start < end:
+        try:
+            v = get_video(cap,start)
+            obs,obs_labels = prepare_observations_original(v)
+            print(start + 20, 'Out of ', end)
+            for i in obs:
+                a.append(i[0])
+                p.append(i[1])
+                n.append(i[2])
+            labels.extend(obs_labels)
+            start += 20
+        except IndexError:
+            start += 20
+            print('Custom Index error ')
+            pass
+    return np.array(a),np.array(p),np.array(n),np.array(labels)
+
+
+
 #----------------------------------------------------------------
 
 
@@ -259,10 +308,28 @@ def prepare_observations(v):
     """Processs the data according to the BINARY PREDICTION NETWORK"""
     optical_flows = [abs(np.mean(compute_optical_flow(v[i],v[i+1]))) for i in range(0,len(v)-1)]
     filtered_flows = remove_n_smallest(14,optical_flows)
+    sampled_frames = filter_frames_two_stream(v,optical_flows,filtered_flows)
+    #obs,labels = get_obs_and_label(sampled_frames)
+    obs, labels = get_obs_and_label_flipped(sampled_frames)
+    return obs,labels
+
+
+
+def prepare_observations_two_stream(v):
+    optical_flows = [abs(np.mean(compute_optical_flow(v[i], v[i + 1]))) for i in range(0, len(v) - 1)]
+    filtered_flows = remove_n_smallest(14, optical_flows)
+    sampled_frames = filter_frames_two_stream(optical_flows, filtered_flows)
+    obs, labels = get_obs_and_label(sampled_frames)
+    obs = np.reshape(obs,(224,224,10))
+    return obs,labels
+
+def prepare_observations_original(v):
+    """Processs the data according to the BINARY PREDICTION NETWORK"""
+    optical_flows = [abs(np.mean(compute_optical_flow(v[i],v[i+1]))) for i in range(0,len(v)-1)]
+    filtered_flows = remove_n_smallest(14,optical_flows)
     sampled_frames = filter_frames(v,optical_flows,filtered_flows)
     obs,labels = get_obs_and_label(sampled_frames)
     return obs,labels
-
 
 #----------------------------------------------------------------
 
@@ -303,14 +370,51 @@ def filter_frames(v,all_flows,filtered_flows):
 
 
 
+
+def filter_frames_two_stream(all_flows,filtered_flows):
+    """Returns those frames with the highest optical flow"""
+    frames = []
+    all_flows_dict = {str(i):idx for idx,i in enumerate(filtered_flows)}
+    for i in filtered_flows:
+        frames.append(all_flows[all_flows_dict[str(i)]])
+    return np.stack(frames,axis=0)
+
+
+
 def get_obs_and_label(frames):
     """Prepare the observations and its labels according to the Shuffle and Learn paper. That is for binary classification"""
     positive_sample = (frames[1],frames[2],frames[3])
     negative_sample_one = (frames[1],frames[0],frames[3])
-    negative_sample_two = (frames[1],frames[4],frames[3])
+    negative_sample_two = (frames[1], frames[4], frames[3])
     obs = [positive_sample,negative_sample_one,negative_sample_two]
     labels = [1,0,0]
     return obs,labels
+
+
+
+def get_obs_and_label_flipped(frames):
+    """Prepare the observations and its labels according to the Shuffle and Learn paper. That is for binary classification"""
+    positive_sample = (frames[1],frames[2],frames[3])
+    negative_sample_one = (frames[1],np.array(tf.image.flip_left_right(frames[2])),frames[3])
+    #negative_sample_two = (frames[1], frames[2], np.array(tf.image.flip_left_right(frames[3])))
+    obs = [positive_sample,negative_sample_one]
+    labels = [1,0]
+    return obs,labels
+
+
+
+def get_obs_and_label_equal(frames):
+    """Prepare the observations and its labels according to the Shuffle and Learn paper. That is for binary classification"""
+    positive_sample = (frames[1],frames[2],frames[3])
+    #negative_sample_one = (frames[1],frames[0],frames[3])
+    negative_sample_two = (frames[1],frames[4],frames[3])
+    #obs = [positive_sample,negative_sample_one,negative_sample_two]
+    obs = [positive_sample, negative_sample_two]
+    #labels = [1,0,0]
+    labels = [1, 0]
+    return obs,labels
+
+
 
 
 
@@ -477,4 +581,29 @@ def prepare_observations_lc(v):
 
 
 
+def alexnet():
+    import tensorflow
+    import keras
+    model = keras.models.Sequential([
+        keras.layers.Conv2D(filters=96, kernel_size=(11, 11), strides=(4, 4), activation='relu',input_shape=(224, 224, 3)),
+        keras.layers.BatchNormalization(),
+        keras.layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2)),
+        keras.layers.Conv2D(filters=160, kernel_size=(5, 5), strides=(1, 1), activation='relu', padding="same"),
+        keras.layers.BatchNormalization(),
+        keras.layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2)),
+        keras.layers.Conv2D(filters=320, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding="same"),
+        keras.layers.BatchNormalization(),
+        keras.layers.Conv2D(filters=320, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding="same"),
+        keras.layers.BatchNormalization(),
+        keras.layers.Conv2D(filters=160, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding="same"),
+        keras.layers.BatchNormalization(),
+        keras.layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2)),
+        keras.layers.Flatten(),
+        keras.layers.Dense(1096, activation='relu'),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(1096, activation='relu'),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(2, activation='softmax')
+        ])
+    return model
 

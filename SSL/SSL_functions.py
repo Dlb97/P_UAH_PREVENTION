@@ -289,7 +289,10 @@ def get_video(cap,start):
     cap.set(cv2.CAP_PROP_POS_FRAMES, start)
     for i in range(20):
         success, img = cap.read()
-        frames.append(cv2.resize(img,(224,224)))
+        try:
+            frames.append(cv2.resize(img,(224,224)))
+        except cv2.error:
+            pass
     return np.stack(frames,axis=0)
 
 #----------------------------------------------------------------
@@ -314,13 +317,12 @@ def prepare_observations(v):
     return obs,labels
 
 
-
 def prepare_observations_two_stream(v):
     optical_flows = [abs(np.mean(compute_optical_flow(v[i], v[i + 1]))) for i in range(0, len(v) - 1)]
     filtered_flows = remove_n_smallest(14, optical_flows)
-    sampled_frames = filter_frames_two_stream(optical_flows, filtered_flows)
-    obs, labels = get_obs_and_label(sampled_frames)
-    obs = np.reshape(obs,(224,224,10))
+    all_flows = [compute_optical_flow(v[i], v[i + 1]) for i in range(0, len(v) - 1)]
+    sampled_frames = filter_frames_two_stream(all_flows, filtered_flows)
+    obs, labels = get_obs_and_label_two_stream(sampled_frames)
     return obs,labels
 
 def prepare_observations_original(v):
@@ -370,7 +372,6 @@ def filter_frames(v,all_flows,filtered_flows):
 
 
 
-
 def filter_frames_two_stream(all_flows,filtered_flows):
     """Returns those frames with the highest optical flow"""
     frames = []
@@ -391,6 +392,14 @@ def get_obs_and_label(frames):
     return obs,labels
 
 
+def get_obs_and_label_two_stream(frames):
+    """Prepare the observations and its labels according to the Shuffle and Learn paper. That is for binary classification"""
+    positive_sample = np.stack([frames[1],frames[2],frames[3]],axis=0)
+    negative_sample_one = np.stack([frames[1],frames[0],frames[3]],axis=0)
+    negative_sample_two = np.stack([frames[1], frames[4], frames[3]],axis=0)
+    obs = np.stack([np.reshape(i,(224,224,6)) for i in [positive_sample,negative_sample_one,negative_sample_two]],axis=0)
+    labels = [1,0,0]
+    return obs,labels
 
 def get_obs_and_label_flipped(frames):
     """Prepare the observations and its labels according to the Shuffle and Learn paper. That is for binary classification"""
@@ -565,6 +574,34 @@ def process_video_lc(cap):
 
     return np.array(a),np.array(p),np.array(n),no_errors
 
+
+
+def process_video_two_stream(cap,start,end):
+    """
+    Process the video to feed the SSL temporal stream
+    :param cap:  Video CAP
+    :param start: frame to start
+    :param end: frame to end
+    :return: array of videos and labels
+    """
+    all_obs = []
+    labels = []
+    while start < end:
+        try:
+            v = get_video(cap,start)
+            if len(v) != 20:
+                start+=20
+                break
+            obs,obs_labels = prepare_observations_two_stream(v)
+            print(start + 20, 'Out of ', end)
+            labels.extend(obs_labels)
+            all_obs.extend(obs)
+            start += 20
+        except IndexError or cv2.error:
+            start += 20
+            print('Custom Index error ')
+            pass
+    return all_obs,np.array(labels)
 
 
 

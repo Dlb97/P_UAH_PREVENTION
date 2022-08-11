@@ -601,7 +601,7 @@ def process_video_two_stream(cap,start,end):
             start += 20
             print('Custom Index error ')
             pass
-    return all_obs,np.array(labels)
+    return np.squeeze(np.stack([all_obs],axis=0),axis=0),np.array(labels)
 
 
 

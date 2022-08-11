@@ -15,7 +15,7 @@ from tensorflow.keras import metrics
 from tensorflow.keras import Model
 from tensorflow.keras.applications import resnet
 from tensorflow.keras.optimizers import Adam
-import SSL.SSL_functions as f
+import SSL_functions as f
 import argparse
 
 
@@ -54,10 +54,22 @@ def temporal_stream(output_shape,dropout_ratio):
 
     return temporal_stream
 
-#python3 BN.py -video /Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4 -weights ./checkpoints/TS.ckpt
+#python3 SSTwo_Stream.py -video /Users/david/workspace/thesis/PREVENTION-DATASET/video_camera1.mp4 -weights ./checkpoints/TS.ckpt
 
 if __name__ == '__main__':
     temporal_stream = temporal_stream(output_shape,dropout_ratio)
+    temporal_stream.compile(
+        optimizer=tf.keras.optimizers.Adam(),
+        loss=tf.keras.losses.BinaryCrossentropy(from_logits=False),
+        metrics=['accuracy']
+    )
+
+
+    if args.weights:
+        print('Loading Weights')
+        temporal_stream.load_weights(args.weights)
+
+
     checkpoints_TS_model = f.define_checkpoint(args.weights)
     cap = cv2.VideoCapture(args.video)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
